@@ -1,47 +1,238 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
+  <main class="app">
+    <h1>The Quiz</h1>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
+    <section class="quiz" v-if="!quizCompleted">
+      <div class="quiz-info">
+        <span class="question">{{ getCurrentQuestion.question }}</span>
+        <span class="score">Score {{ score }}/{{ questions.length }}</span>
+      </div>
 
-  <main>
-    <TheWelcome />
+      <div class="options">
+        <label
+          v-for="(option, index) in getCurrentQuestion.options"
+          :key="index"
+          :class="`option ${
+            getCurrentQuestion.selected == index
+              ? index == getCurrentQuestion.answer
+                ? 'correct'
+                : 'wrong'
+              : ''
+          } ${
+            getCurrentQuestion.selected != null &&
+            index != getCurrentQuestion.selected
+              ? 'disabled'
+              : ''
+          }`"
+        >
+          <input
+            type="radio"
+            :name="getCurrentQuestion.index"
+            :value="index"
+            v-model="getCurrentQuestion.selected"
+            :disabled="getCurrentQuestion.selected"
+            @change="setAnswer"
+          />
+          <span>{{ option }}</span>
+        </label>
+      </div>
+
+      <button @click="nextQuestion" :disabled="!getCurrentQuestion.selected">
+        {{
+          getCurrentQuestion.index == questions.length - 1
+            ? "Finish"
+            : getCurrentQuestion.selected == null
+            ? "Select an option"
+            : "Next Question"
+        }}
+      </button>
+    </section>
+
+    <section class="results" v-else>
+      <h2>You have finished the quiz!</h2>
+      <p>Your score is {{ score }}/{{ questions.length }}</p>
+      <button @click="retakeQuiz">Retake Quiz</button>
+    </section>
   </main>
 </template>
 
+<script setup>
+import { computed, ref } from "vue";
+
+const questions = ref([
+  {
+    question: "What is Vue Js ?",
+    answer: 0,
+    options: ["A front end framework", "A library", "An ice cream maker"],
+    selected: null,
+  },
+  {
+    question: "What is Vue Js ?",
+    answer: 0,
+    options: ["A front end framework", "A library", "An ice cream maker"],
+    selected: null,
+  },
+  {
+    question: "What is Vue Js ?",
+    answer: 0,
+    options: ["A front end framework", "A library", "An ice cream maker"],
+    selected: null,
+  },
+]);
+
+const quizCompleted = ref(false);
+const currentQuestion = ref(0);
+
+const score = computed(() => {
+  let value = 0;
+  questions.value.map((q) => {
+    if (q.selected == q.answer) {
+      value++;
+    }
+  });
+
+  return value;
+});
+
+const getCurrentQuestion = computed(() => {
+  let question = questions.value[currentQuestion.value];
+  question.index = currentQuestion.value;
+
+  return question;
+});
+
+function setAnswer(event) {
+  questions.value[currentQuestion.value].selected = event.target.value;
+  event.target.value = null;
+}
+
+function nextQuestion() {
+  if (currentQuestion.value < questions.value.length - 1) {
+    currentQuestion.value++;
+  } else {
+    quizCompleted.value = true;
+  }
+}
+
+function retakeQuiz() {
+  quizCompleted.value = false;
+  currentQuestion.value = 0;
+  questions.value.map((q) => {
+    q.selected = null;
+  });
+}
+</script>
+
 <style scoped>
-header {
-  line-height: 1.5;
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  height: 100vh;
 }
 
-.logo {
+h1 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.quiz {
+  background-color: #382a4b;
+  padding: 1rem;
+  width: 100%;
+  max-width: 640px;
+}
+
+.quiz-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.quiz-info .question {
+  color: #8f8f8f;
+  font-size: 1.25rem;
+}
+
+.quiz-info.score {
+  color: #fff;
+  font-size: 1.25rem;
+}
+
+.options {
+  margin-bottom: 1rem;
+}
+
+.option {
+  padding: 1rem;
   display: block;
-  margin: 0 auto 2rem;
+  background-color: #271c36;
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
 }
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
+.option:hover {
+  background-color: #2d213f;
+}
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+.option.correct {
+  background-color: #2cce7d;
+}
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.option.wrong {
+  background-color: #ff5a5f;
+}
+
+.option:last-of-type {
+  margin-bottom: 0;
+}
+
+.option.disabled {
+  opacity: 0.5;
+}
+
+.option input {
+  display: none;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+}
+
+.results button {
+  margin-top: 3rem;
+}
+
+button {
+  appearance: none;
+  outline: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  background-color: #2cce7d;
+  color: #2d213f;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 1.2rem;
+  border-radius: 0.5rem;
+}
+
+button:disabled {
+  opacity: 0.5;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+p {
+  color: #8f8f8f;
+  font-size: 1.5rem;
+  text-align: center;
 }
 </style>
